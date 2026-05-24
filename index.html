@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial Crime Detection — Agentic AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --card: #21253a;
+      --border: #2e3450;
+      --accent: #4f8ef7;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --crypto: #a78bfa;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #12172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header .logo { font-size: 28px; }
+    header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+    header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    .badge {
+      margin-left: auto;
+      background: rgba(79,142,247,0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* LAYOUT */
+    main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.total::before  { background: var(--accent); }
+    .kpi-card.normal::before { background: var(--success); }
+    .kpi-card.anomaly::before{ background: var(--danger); }
+    .kpi-card.tbml::before   { background: var(--warning); }
+    .kpi-card.crypto::before { background: var(--crypto); }
+    .kpi-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .kpi-value { font-size: 2rem; font-weight: 800; margin: 6px 0 4px; }
+    .kpi-sub   { font-size: 0.75rem; color: var(--muted); }
+    .kpi-card.total  .kpi-value { color: var(--accent); }
+    .kpi-card.normal .kpi-value { color: var(--success); }
+    .kpi-card.anomaly.kpi-value { color: var(--danger); }
+
+    /* CONTROLS */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .controls label { font-size: 0.8rem; color: var(--muted); }
+    .controls input[type=range] {
+      accent-color: var(--accent);
+      width: 160px;
+    }
+    .btn {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-ghost   {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    #n-label { color: var(--accent); font-weight: 700; }
+
+    /* CHARTS */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 860px) { .chart-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .chart-card h3 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    canvas { max-height: 260px; }
+
+    /* TABLE */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .table-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .table-header h3 { font-size: 0.95rem; font-weight: 700; flex: 1; }
+    .filter-tabs { display: flex; gap: 6px; }
+    .tab {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+    .search-box {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.8rem;
+      width: 200px;
+    }
+    .search-box:focus { outline: none; border-color: var(--accent); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--accent); }
+    td { padding: 10px 14px; border-bottom: 1px solid rgba(46,52,80,.5); white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(79,142,247,.05); }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .pill-anomaly  { background: rgba(239,68,68,.15);   color: var(--danger); }
+    .pill-normal   { background: rgba(34,197,94,.15);   color: var(--success); }
+    .pill-pending  { background: rgba(245,158,11,.15);  color: var(--warning); }
+    .pill-unverified{background: rgba(167,139,250,.15); color: var(--crypto); }
+    .pill-verified { background: rgba(34,197,94,.1);    color: var(--success); }
+    .pill-fiat     { background: rgba(79,142,247,.12);  color: var(--accent); }
+    .pill-crypto   { background: rgba(167,139,250,.12); color: var(--crypto); }
+
+    .amount-anomaly { color: var(--danger); font-weight: 700; }
+    .amount-normal  { color: var(--text); }
+
+    /* PAGINATION */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .page-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+    #page-info { font-size: 0.78rem; color: var(--muted); }
+
+    /* LEGEND */
+    .legend {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .legend h3 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+    .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .legend-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .legend-item strong { font-size: 0.82rem; display: block; margin-bottom: 2px; }
+    .legend-item p { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🔍</div>
+  <div>
+    <h1>Financial Crime Detection</h1>
+    <p>Agentic AI — Synthetic Transaction Monitor</p>
+  </div>
+  <span class="badge">⚡ LIVE SIMULATION</span>
+</header>
+
+<main>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <label>Jumlah transaksi: <span id="n-label">100</span></label>
+    <input type="range" id="n-slider" min="50" max="500" step="50" value="100" />
+    <button class="btn btn-primary" onclick="regenerate()">🔄 Generate Dataset</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn btn-danger" onclick="clearData()">🗑 Reset</button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card total">
+      <div class="kpi-label">Total Transaksi</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">Seluruh dataset</div>
+    </div>
+    <div class="kpi-card normal">
+      <div class="kpi-label">Normal</div>
+      <div class="kpi-value" id="kpi-normal">—</div>
+      <div class="kpi-sub">Transaksi bersih</div>
+    </div>
+    <div class="kpi-card anomaly">
+      <div class="kpi-label">Anomali</div>
+      <div class="kpi-value" id="kpi-anomaly" style="color:var(--danger)">—</div>
+      <div class="kpi-sub">Terdeteksi mencurigakan</div>
+    </div>
+    <div class="kpi-card tbml">
+      <div class="kpi-label">TBML</div>
+      <div class="kpi-value" id="kpi-tbml" style="color:var(--warning)">—</div>
+      <div class="kpi-sub">Trade-Based ML</div>
+    </div>
+    <div class="kpi-card crypto">
+      <div class="kpi-label">Crypto Mixer</div>
+      <div class="kpi-value" id="kpi-crypto" style="color:var(--crypto)">—</div>
+      <div class="kpi-sub">Blockchain Layering</div>
+    </div>
+    <div class="kpi-card total">
+      <div class="kpi-label">Deepfake KYC</div>
+      <div class="kpi-value" id="kpi-deepfake" style="color:var(--accent)">—</div>
+      <div class="kpi-sub">Synthetic Identity</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>📊 Distribusi Jumlah Transaksi</h3>
+      <canvas id="chart-amount"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>🔀 Tipe Transaksi vs Anomali</h3>
+      <canvas id="chart-txtype"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>💎 Tipe Aset</h3>
+      <canvas id="chart-asset"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>📡 Rute Pembayaran</h3>
+      <canvas id="chart-route"></canvas>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <h3>📋 Tipologi Financial Crime</h3>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--warning)"></div>
+        <div>
+          <strong>TBML — Trade-Based Money Laundering</strong>
+          <p>Penyalahgunaan transaksi perdagangan internasional untuk memindahkan dana ilegal. Nilai sangat besar (500K–2M USD) via WIRE.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--crypto)"></div>
+        <div>
+          <strong>Crypto Layering &amp; Mixers</strong>
+          <p>Perpindahan kripto cepat antar dompet anonim via BLOCKCHAIN. Status UNVERIFIED, tujuan samarkan jejak dana.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--accent)"></div>
+        <div>
+          <strong>Deepfake KYC / Synthetic Identity</strong>
+          <p>Akun dibuat dengan identitas sintetis berbasis AI. Transaksi pertama bernilai tinggi (~9.500 USD), status PENDING.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>🗂 Transaction Log</h3>
+      <div class="filter-tabs">
+        <button class="tab active" data-filter="all" onclick="setFilter('all',this)">Semua</button>
+        <button class="tab" data-filter="anomaly" onclick="setFilter('anomaly',this)">Anomali</button>
+        <button class="tab" data-filter="normal" onclick="setFilter('normal',this)">Normal</button>
+      </div>
+      <input class="search-box" id="search" placeholder="🔍 Cari ID / Sender…" oninput="renderTable()" />
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('id')">ID ↕</th>
+            <th onclick="sortBy('timestamp')">Timestamp ↕</th>
+            <th onclick="sortBy('sender_id')">Sender</th>
+            <th onclick="sortBy('receiver_id')">Receiver</th>
+            <th onclick="sortBy('amount')">Amount ↕</th>
+            <th>Currency</th>
+            <th>Asset</th>
+            <th>Tipe</th>
+            <th>Rute</th>
+            <th>KYC</th>
+            <th onclick="sortBy('is_anomaly')">Status ↕</th>
+          </tr>
+        </thead>
+        <tbody id="tx-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="page-btn" id="prev-btn" onclick="prevPage()">‹</button>
+      <span id="page-info"></span>
+      <button class="page-btn" id="next-btn" onclick="nextPage()">›</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Financial Crime Detection · Agentic AI Simulation · Radja.ipynb → Single HTML · © 2026
+</footer>
+
+<script>
+// ─── DATA ENGINE ────────────────────────────────────────────────────────────
+
+const CURRENCIES = ['USD','EUR','GBP'];
+const ROUTES_FIAT = ['ACH','WIRE','SEPA'];
+
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function randFloat(mean,std){
+  let u=0,v=0;
+  while(u===0)u=Math.random();
+  while(v===0)v=Math.random();
+  return Math.abs(mean + std * Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v));
+}
+function fmtDate(d){ return d.toISOString().replace('T',' ').slice(0,19); }
+
+function generateData(n){
+  const rows = [];
+  const start = new Date('2023-11-15');
+
+  // Base data
+  for(let i=0;i<n;i++){
+    const ts = new Date(start.getTime() + randInt(1,1440)*60000);
+    rows.push({
+      id: `tx-${981000+i}`,
+      timestamp: fmtDate(ts),
+      sender_id: `u-${randInt(10000,99999)}`,
+      receiver_id: `m-${randInt(10000,99999)}`,
+      amount: +randFloat(150,50).toFixed(2),
+      currency: CURRENCIES[randInt(0,2)],
+      asset_type: 'FIAT',
+      transaction_type: 'TRANSFER',
+      route: ROUTES_FIAT[randInt(0,2)],
+      kyc_status: 'VERIFIED',
+      is_anomaly: false,
+      scenario: 'normal'
+    });
+  }
+
+  // TBML
+  for(let i=0;i<5;i++){
+    rows.push({
+      id: `tx-tbml-${randInt(100,999)}`,
+      timestamp: fmtDate(new Date()),
+      sender_id: 'c-iran-oil',
+      receiver_id: 'c-china-refinery',
+      amount: randInt(500000,2000000),
+      currency: 'USD',
+      asset_type: 'FIAT',
+      transaction_type: 'TRADE_FINANCE',
+      route: 'WIRE',
+      kyc_status: 'VERIFIED',
+      is_anomaly: true,
+      scenario: 'tbml'
+    });
+  }
+
+  // Crypto Mixer
+  for(let i=0;i<5;i++){
+    rows.push({
+      id: `tx-mix-${randInt(100,999)}`,
+      timestamp: fmtDate(new Date()),
+      sender_id: 'u-mix-ext-01',
+      receiver_id: 'w-temp-441',
+      amount: 0.55,
+      currency: 'ETH',
+      asset_type: 'CRYPTO',
+      transaction_type: 'TRANSFER',
+      route: 'BLOCKCHAIN',
+      kyc_status: 'UNVERIFIED',
+      is_anomaly: true,
+      scenario: 'crypto'
+    });
+  }
+
+  // Deepfake KYC
+  for(let i=0;i<5;i++){
+    rows.push({
+      id: `tx-ai-${randInt(100,999)}`,
+      timestamp: fmtDate(new Date()),
+      sender_id: 'u-deepfake-gen',
+      receiver_id: 'm-luxury-store',
+      amount: 9500,
+      currency: 'USD',
+      asset_type: 'FIAT',
+      transaction_type: 'PURCHASE',
+      route: 'ACH',
+      kyc_status: 'PENDING',
+      is_anomaly: true,
+      scenario: 'deepfake'
+    });
+  }
+
+  return rows;
+}
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let dataset = [];
+let currentFilter = 'all';
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let sortKey = 'is_anomaly';
+let sortDir = -1;
+let charts = {};
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.getElementById('n-slider').addEventListener('input', function(){
+  document.getElementById('n-label').textContent = this.value;
+});
+
+function regenerate(){
+  const n = +document.getElementById('n-slider').value;
+  dataset = generateData(n);
+  currentPage = 1;
+  updateKPI();
+  renderCharts();
+  renderTable();
+}
+
+function clearData(){
+  dataset = [];
+  updateKPI();
+  renderCharts();
+  renderTable();
+}
+
+// ─── KPI ─────────────────────────────────────────────────────────────────────
+function updateKPI(){
+  const total   = dataset.length;
+  const anomaly = dataset.filter(r=>r.is_anomaly).length;
+  const normal  = total - anomaly;
+  const tbml    = dataset.filter(r=>r.scenario==='tbml').length;
+  const crypto  = dataset.filter(r=>r.scenario==='crypto').length;
+  const deep    = dataset.filter(r=>r.scenario==='deepfake').length;
+
+  document.getElementById('kpi-total').textContent   = total;
+  document.getElementById('kpi-normal').textContent  = normal;
+  document.getElementById('kpi-anomaly').textContent = anomaly;
+  document.getElementById('kpi-tbml').textContent    = tbml;
+  document.getElementById('kpi-crypto').textContent  = crypto;
+  document.getElementById('kpi-deepfake').textContent= deep;
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+const C = {
+  accent:  '#4f8ef7',
+  danger:  '#ef4444',
+  warning: '#f59e0b',
+  success: '#22c55e',
+  crypto:  '#a78bfa',
+  muted:   '#8892a4',
+  grid:    'rgba(46,52,80,.6)',
+  bg:      '#21253a',
+};
+
+function destroyChart(id){
+  if(charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function chartDefaults(){
+  return {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { labels: { color: C.muted, font: { size: 11 } } },
+      tooltip: { backgroundColor: '#12172a', titleColor: '#e2e8f0', bodyColor: C.muted, borderColor: C.grid, borderWidth: 1 }
+    },
+    scales: {
+      x: { grid: { color: C.grid }, ticks: { color: C.muted, font: { size: 10 } } },
+      y: { grid: { color: C.grid }, ticks: { color: C.muted, font: { size: 10 } } }
+    }
+  };
+}
+
+function renderCharts(){
+  if(!dataset.length){ ['chart-amount','chart-txtype','chart-asset','chart-route'].forEach(destroyChart); return; }
+
+  // --- Chart 1: Amount Distribution (buckets) ---
+  destroyChart('chart-amount');
+  const buckets = ['0–50','51–100','101–200','201–500','501K–2M'];
+  const normalBuckets = [0,0,0,0,0];
+  const anomBuckets   = [0,0,0,0,0];
+  dataset.forEach(r => {
+    const a = r.amount;
+    const idx = a<=50?0 : a<=100?1 : a<=200?2 : a<=500?3 : 4;
+    r.is_anomaly ? anomBuckets[idx]++ : normalBuckets[idx]++;
+  });
+  charts['chart-amount'] = new Chart(document.getElementById('chart-amount'), {
+    type: 'bar',
+    data: {
+      labels: buckets,
+      datasets: [
+        { label: 'Normal',  data: normalBuckets, backgroundColor: C.success+'99', borderColor: C.success, borderWidth: 1 },
+        { label: 'Anomali', data: anomBuckets,   backgroundColor: C.danger+'99',  borderColor: C.danger,  borderWidth: 1 },
+      ]
+    },
+    options: { ...chartDefaults(), plugins: { ...chartDefaults().plugins } }
+  });
+
+  // --- Chart 2: Transaction Type ---
+  destroyChart('chart-txtype');
+  const txTypes = [...new Set(dataset.map(r=>r.transaction_type))];
+  const txNormal = txTypes.map(t => dataset.filter(r=>r.transaction_type===t && !r.is_anomaly).length);
+  const txAnom   = txTypes.map(t => dataset.filter(r=>r.transaction_type===t &&  r.is_anomaly).length);
+  charts['chart-txtype'] = new Chart(document.getElementById('chart-txtype'), {
+    type: 'bar',
+    data: {
+      labels: txTypes,
+      datasets: [
+        { label: 'Normal',  data: txNormal, backgroundColor: C.accent+'99', borderColor: C.accent, borderWidth: 1 },
+        { label: 'Anomali', data: txAnom,   backgroundColor: C.danger+'99', borderColor: C.danger,  borderWidth: 1 },
+      ]
+    },
+    options: { ...chartDefaults() }
+  });
+
+  // --- Chart 3: Asset Type ---
+  destroyChart('chart-asset');
+  const assetTypes = ['FIAT','CRYPTO'];
+  const assetNormal = assetTypes.map(t => dataset.filter(r=>r.asset_type===t && !r.is_anomaly).length);
+  const assetAnom   = assetTypes.map(t => dataset.filter(r=>r.asset_type===t &&  r.is_anomaly).length);
+  charts['chart-asset'] = new Chart(document.getElementById('chart-asset'), {
+    type: 'doughnut',
+    data: {
+      labels: ['FIAT Normal','FIAT Anomali','CRYPTO Normal','CRYPTO Anomali'],
+      datasets: [{
+        data: [assetNormal[0], assetAnom[0], assetNormal[1], assetAnom[1]],
+        backgroundColor: [C.accent+'cc', C.danger+'cc', C.crypto+'cc', C.warning+'cc'],
+        borderColor: '#21253a',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: C.muted, font: { size: 11 } } }, tooltip: chartDefaults().plugins.tooltip }
+    }
+  });
+
+  // --- Chart 4: Route ---
+  destroyChart('chart-route');
+  const routes = [...new Set(dataset.map(r=>r.route))];
+  const routeCounts = routes.map(r => dataset.filter(tx=>tx.route===r).length);
+  const routeColors = routes.map(r => r==='BLOCKCHAIN'?C.crypto : r==='WIRE'?C.warning : C.accent);
+  charts['chart-route'] = new Chart(document.getElementById('chart-route'), {
+    type: 'bar',
+    data: {
+      labels: routes,
+      datasets: [{
+        label: 'Transaksi',
+        data: routeCounts,
+        backgroundColor: routeColors.map(c=>c+'bb'),
+        borderColor: routeColors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: { ...chartDefaults().plugins, legend: { display: false } }
+    }
+  });
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+function setFilter(f, el){
+  currentFilter = f;
+  currentPage = 1;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function getFiltered(){
+  const q = (document.getElementById('search')?.value||'').toLowerCase();
+  return dataset
+    .filter(r => {
+      if(currentFilter==='anomaly' && !r.is_anomaly) return false;
+      if(currentFilter==='normal'  &&  r.is_anomaly) return false;
+      if(q && !r.id.toLowerCase().includes(q) && !r.sender_id.toLowerCase().includes(q)) return false;
+      return true;
+    })
+    .sort((a,b)=>{
+      const va = a[sortKey], vb = b[sortKey];
+      if(va < vb) return sortDir;
+      if(va > vb) return -sortDir;
+      return 0;
+    });
+}
+
+let _sortKey = 'is_anomaly';
+function sortBy(k){
+  if(sortKey===k) sortDir *= -1; else { sortKey=k; sortDir=-1; }
+  renderTable();
+}
+
+function renderTable(){
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(currentPage > pages) currentPage = pages;
+
+  const slice = filtered.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const tbody = document.getElementById('tx-body');
+
+  if(!slice.length){
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:32px">Tidak ada data</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(r => {
+      const kyc = r.kyc_status==='VERIFIED'?'pill-verified': r.kyc_status==='UNVERIFIED'?'pill-unverified':'pill-pending';
+      const asset = r.asset_type==='CRYPTO'?'pill-crypto':'pill-fiat';
+      const amtFmt = r.amount >= 1000 ? r.amount.toLocaleString('id-ID') : r.amount;
+      return `
+      <tr>
+        <td style="font-family:monospace;font-size:.78rem;color:var(--muted)">${r.id}</td>
+        <td style="color:var(--muted);font-size:.78rem">${r.timestamp}</td>
+        <td style="font-size:.8rem">${r.sender_id}</td>
+        <td style="font-size:.8rem">${r.receiver_id}</td>
+        <td class="${r.is_anomaly?'amount-anomaly':'amount-normal'}">${amtFmt} <small style="color:var(--muted)">${r.currency}</small></td>
+        <td>${r.currency}</td>
+        <td><span class="pill ${asset}">${r.asset_type}</span></td>
+        <td style="font-size:.78rem">${r.transaction_type}</td>
+        <td style="font-size:.78rem">${r.route}</td>
+        <td><span class="pill ${kyc}">${r.kyc_status}</span></td>
+        <td><span class="pill ${r.is_anomaly?'pill-anomaly':'pill-normal'}">${r.is_anomaly?'⚠ ANOMALI':'✓ NORMAL'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('page-info').textContent = `Hal ${currentPage} / ${pages} (${total} baris)`;
+  document.getElementById('prev-btn').disabled = currentPage===1;
+  document.getElementById('next-btn').disabled = currentPage===pages;
+}
+
+function prevPage(){ if(currentPage>1){ currentPage--; renderTable(); } }
+function nextPage(){ currentPage++; renderTable(); }
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportCSV(){
+  if(!dataset.length){ alert('Generate dataset dulu!'); return; }
+  const cols = ['id','timestamp','sender_id','receiver_id','amount','currency','asset_type','transaction_type','route','kyc_status','is_anomaly'];
+  const csv = [cols.join(','), ...dataset.map(r=>cols.map(c=>r[c]).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'fraud_synthetic_data_agentic_ai.csv';
+  a.click();
+}
+
+// ─── AUTO START ──────────────────────────────────────────────────────────────
+regenerate();
+</script>
+</body>
+</html>
